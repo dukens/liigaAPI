@@ -38,4 +38,3 @@ class Product(db.Model):
     name = db.Column(db.String(50), nullable=False, unique=True)
     price = db.Column(db.Integer, nullable=False)
 
-#
