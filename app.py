@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta
 from faker import Faker
 import random
 
@@ -137,3 +137,58 @@ def create_random_data():
     add_orders()
     add_products()
     add_order_products()
+
+
+def get_orders_by(customer_id=1):
+    print('Get Orders by Customer')
+    customer_orders = Order.query.filter_by(customer_id=customer_id).all()
+    for order in customer_orders:
+        print(order.id)
+
+def get_pending_orders():
+    print('Pending orders')
+    pending_orders = Order.query.filter(Order.shipped_date.is_(None)).order_by(Order.order_date.desc()).all()
+    for order in pending_orders:
+        print(order.order_date)
+
+def how_many_customers():
+    print('How many customers??')
+    print(Customer.query.count())
+
+def orders_with_code():
+    print('Orders with coupon code')
+    orders = Order.query\
+        .filter(Order.coupon_code.isnot(None))\
+        .filter(Order.coupon_code != 'FREESHIPPING')\
+        .all()
+    for order in orders:
+        print(order.coupon_code)
+
+def revenue_in_last_x_days(x_days=30):
+    print('Revenue past x days')
+    print(db.session
+        .query(db.func.sum(Product.price))
+        .join(order_product)
+        .join(Order)
+        .filter(Order.order_date > (datetime.now() - timedelta(days=x_days)))
+        .all()
+        .scalar())
+
+def average_fulfillment_time():
+    print('Average fulfillment time')
+    print(
+        db.session.query(
+            db.func.time(
+                db.func.avg(
+                    db.func.strftime('%s', Order.shipped_date) - db.func.strftime('%s',Order.order_date)
+                ),
+                'unixepoch'
+            )
+        ).filter(Order.shipped_date.isnot(None)).scalar()
+    )
+
+def get_customers_who_have_purchased_x_dollars(amount=500):
+    print('All customers who have purchased x dollars')
+    customers = db.session.query(Customer).join(Order).join(order_product).join(Product).group_by(Customer).having(db.func.sum(Product.price) > amount).all()
+    for customer in customers:
+        print(customer.first_name)
